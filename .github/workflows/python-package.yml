@@ -30,7 +30,7 @@ jobs:
     - name: Lint with ruff
       run: |
         ruff check .
-        ruff format .
+        ruff format --check .
     - name: Analyze with mypy
       run: |
         mypy .
