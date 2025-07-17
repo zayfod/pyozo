@@ -1,0 +1,13 @@
+.vscode/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+venv/
+build/
+dist/
+pyozo.egg-info/
+
+.DS_Store
+
+pyozo/version.py

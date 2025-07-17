@@ -1,0 +1,6 @@
+[flake8]
+exclude = venv, build
+max-line-length = 120
+ignore =
+    "E203",     # "whitespace before ':'" - not compatible with Ruff
+    "E501"      # "line too long"
