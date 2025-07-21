@@ -1,3 +1,9 @@
+"""
+
+Control service (CTS) module.
+
+"""
+
 from typing import Tuple
 import logging
 

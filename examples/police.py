@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+
+Flash the robot front LEDs in a police car pattern.
+
+"""
 
 import asyncio
 

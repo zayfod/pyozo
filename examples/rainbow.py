@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+
+Generate a rainbow animation on the robot's front LEDs.
+
+"""
 
 from typing import List, Tuple, Generator
 import asyncio

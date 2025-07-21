@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+
+Discover robots over Bluetooth and list their UUIDs.
+
+"""
 
 import asyncio
 
