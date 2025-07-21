@@ -1,3 +1,9 @@
+"""
+
+File transfer service client module.
+
+"""
+
 from typing import List, Optional
 import asyncio
 import logging
@@ -25,15 +31,20 @@ __all__ = [
 
 # Note: 2 is Packet_Fragment header size.
 MAX_FRAGMENT_SIZE = MAX_PACKET_SIZE - 2
+"""Faximum packet fragment size in bytes."""
 
 
 logger = logging.getLogger("pyozo.fts_client")
 
 
 class FileTransferServiceClient:
+    """File Transfer Service client class."""
+
     RESPONSE_TIMEOUT = 2.0
+    """Response timeout in seconds."""
 
     def __init__(self, bleak_client: BleakClient) -> None:
+        """Constructor."""
         self.bleak_client = bleak_client
         self.fragments: List[Packet_Fragment] = []
         self.file_data = b""
@@ -41,11 +52,13 @@ class FileTransferServiceClient:
         self.response_event = asyncio.Event()
 
     async def response_handler(self, packet: BaseModel) -> None:
+        """Response handler method."""
         logger.debug(f"Got {packet}")
         self.response.append(packet)
         self.response_event.set()
 
     async def notification_handler(self, _: BleakGATTCharacteristic, data: bytearray) -> None:
+        """Bluetooth characteristic notification handler method."""
         packet = packet_from_bytes(data)
         if isinstance(packet, Packet_Fragment):
             # Fragmented packet
@@ -60,19 +73,23 @@ class FileTransferServiceClient:
             await self.response_handler(packet)
 
     async def data_notification_handler(self, _: BleakGATTCharacteristic, data: bytearray) -> None:
+        """Data notification handler method."""
         logger.debug(f"Got {len(data)}B data.")
         self.file_data += data
 
     def clear_file_data(self) -> None:
+        """Clear the file data buffer."""
         self.file_data = b""
 
     async def connect(self) -> None:
+        """Connect to the File Transfer Bluetooth service."""
         if self.bleak_client.mtu_size < MAX_PACKET_SIZE:
             raise ValueError(f"MTU of {self.bleak_client.mtu_size} too small.")
         await self.bleak_client.start_notify(FTS_DATA_CHARACTERISTIC, self.data_notification_handler)
         await self.bleak_client.start_notify(FTS_CMD_CHARACTERISTIC, self.notification_handler)
 
     async def disconnect(self) -> None:
+        """Disconnect from the File Transfer Bluetooth service."""
         try:
             await self.bleak_client.stop_notify(FTS_CMD_CHARACTERISTIC)
             await self.bleak_client.stop_notify(FTS_DATA_CHARACTERISTIC)
@@ -81,6 +98,7 @@ class FileTransferServiceClient:
                 logger.error(f"Failed to stop notifications. {e}")
 
     async def wait_response(self, timeout: Optional[float] = RESPONSE_TIMEOUT) -> Optional[BaseModel]:
+        """Wait for a protocol response."""
         if not self.response:
             self.response_event.clear()
             try:
@@ -94,18 +112,20 @@ class FileTransferServiceClient:
         return response
 
     async def request(self, packet: BaseModel, wait_response: bool = True) -> Optional[BaseModel]:
+        """Make a file transfer protocol request."""
         data = packet.to_bytes()
         if len(data) <= MAX_PACKET_SIZE:
             await self.bleak_client.write_gatt_char(FTS_CMD_CHARACTERISTIC, data, response=False)
             logger.debug(f"Sent {packet}")
         else:
             logger.debug(f"Sent fragmented {packet}")
-            await self.request_fragmented(data)
+            await self._request_fragmented(data)
         if wait_response:
             return await self.wait_response()
         return None
 
-    async def request_fragmented(self, data: bytes) -> None:
+    async def _request_fragmented(self, data: bytes) -> None:
+        """Transmit a fragmented file transfer protocol request."""
         length = len(data)
         if length > 128 * MAX_FRAGMENT_SIZE:
             raise ValueError(f"Request too large ({length}B).")
@@ -125,5 +145,6 @@ class FileTransferServiceClient:
             fragment_index += 1
 
     async def send_data(self, data: bytes) -> None:
+        """Send data to the File Transfer Bluetooth service."""
         await self.bleak_client.write_gatt_char(FTS_DATA_CHARACTERISTIC, data, response=False)
         logger.debug(f"Sent {len(data)}B data.")

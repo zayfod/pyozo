@@ -1,3 +1,9 @@
+"""
+
+Utility functions for connecting to robots over Bluetooth.
+
+"""
+
 from typing import AsyncGenerator, List
 from contextlib import asynccontextmanager
 
@@ -14,6 +20,7 @@ __all__ = [
 
 @asynccontextmanager
 async def get_robot(name: str = "", uuid: str = "", timeout: float = 3.0) -> AsyncGenerator[Robot, None]:
+    """Connect to a specific robot by name or UUID, or connect to the first availble one."""
     if name:
         device = await BleakScanner.find_device_by_name(name, timeout=timeout)
     elif uuid:
@@ -36,6 +43,7 @@ async def get_robot(name: str = "", uuid: str = "", timeout: float = 3.0) -> Asy
 
 
 async def discover_robots(timeout: float = 3.0) -> List[str]:
+    """Return a list of available robot UUID addresses through Bluetooth discovery."""
     devices = await BleakScanner(timeout=timeout).discover()
     sorted_devices = sorted(devices, key=lambda device: (device.name or "", device.address))
     res = []

@@ -1,3 +1,9 @@
+"""
+
+File transfer service protocol encoder module.
+
+"""
+
 from typing import Union
 from enum import Enum
 import struct
@@ -56,10 +62,13 @@ __all__ = [
 
 
 FTS_SERVICE = "6ed3de6c-5f13-4548-a885-c58779136701"
+"""File transfer Bluetooth service UUID."""
 FTS_CMD_CHARACTERISTIC = "6ed3de6c-5f13-4548-a885-c58779136704"
+"""File transfer command Bluetooth characteristic UUID."""
 FTS_DATA_CHARACTERISTIC = "6ed3de6c-5f13-4548-a885-c58779136703"
-
+"""File transfer data Bluetooth characteristic UUID."""
 MAX_PACKET_SIZE = 20
+"""Maximum packet size in bytes, bound by Bluetooth MTU."""
 
 
 class Volume(Enum):
@@ -383,6 +392,7 @@ def packet_from_bytes(data: Union[bytes, bytearray]) -> BaseModel:
 
 
 def raise_for_response_code(response_code: ResponseCode) -> None:
+    """Raises an exception if the response code indicates an error."""
     if response_code != ResponseCode.NO_ERROR:
         error = RESPONSE_CODE_TO_ERROR.get(response_code, "Unknown error.")
         raise RuntimeError(error)

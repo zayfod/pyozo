@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+
+Play a laugh sample on the robot.
+
+"""
 
 import asyncio
 

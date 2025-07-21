@@ -1,3 +1,9 @@
+"""
+
+Virtual memory data structure definitions.
+
+"""
+
 from .protocol_utils import BaseModel, Field, FieldType
 
 
@@ -46,6 +52,8 @@ BLUETOOTH_ADDRESS_SIZE = 6
 
 
 class ProcessedColor(BaseModel):
+    """Processed color sensor readings."""
+
     # Normalized values.
     red: int = Field(FieldType.UINT8, default=0)
     green: int = Field(FieldType.UINT8, default=0)
@@ -58,6 +66,8 @@ class ProcessedColor(BaseModel):
 
 
 class IRPoximity(BaseModel):
+    """Infrared proximity sensor readings."""
+
     left_rear: int = Field(FieldType.UINT8, default=0)
     left_front: int = Field(FieldType.UINT8, default=0)
     right_rear: int = Field(FieldType.UINT8, default=0)
@@ -66,6 +76,8 @@ class IRPoximity(BaseModel):
 
 
 class RelativePosition(BaseModel):
+    """Relative robot position and orientation, obtained from odometry."""
+
     counter: int = Field(FieldType.UINT8, default=0)
     x: float = Field(FieldType.FLOAT, default=0.0)
     y: float = Field(FieldType.FLOAT, default=0.0)
@@ -75,6 +87,8 @@ class RelativePosition(BaseModel):
 
 
 class Version(BaseModel):
+    """Software version."""
+
     major: int = Field(FieldType.UINT8, default=0)
     minor: int = Field(FieldType.UINT8, default=0)
     patch: int = Field(FieldType.UINT16, default=0)

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+
+Read and print IR proximity sensor values.
+
+"""
 
 import asyncio
 

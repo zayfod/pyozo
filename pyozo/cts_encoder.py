@@ -1,3 +1,9 @@
+"""
+
+Control service protocol encoder module.
+
+"""
+
 from typing import Union
 from enum import Enum, Flag
 import struct
@@ -81,8 +87,11 @@ __all__ = [
 
 
 CTRL_SERVICE = "8903136c-5f13-4548-a885-c58779136801"
+"""Control Bluetooth service UUID."""
 CTRL_CHARACTERISTIC = "8903136c-5f13-4548-a885-c58779136802"
+"""Control Bluetooth characteristic UUID."""
 MAX_PACKET_SIZE = 20
+"""Maximum packet size in bytes, bound by Bluetooth MTU."""
 
 
 class IOResult(Enum):
@@ -597,12 +606,14 @@ def packet_from_bytes(data: Union[bytes, bytearray]) -> BaseModel:
 
 
 def raise_for_ioresult(ioresult: IOResult) -> None:
+    """Raises an exception if the IOResult indicates an error."""
     if ioresult != IOResult.SUCCESS:
         error = IORESULT_TO_ERROR.get(ioresult, "Unknown error.")
         raise RuntimeError(error)
 
 
 def raise_for_call_status(call_status: CallStatus) -> None:
+    """Raises an exception if the CallStatus indicates an error."""
     if call_status != CallStatus.SUCCESS:
         error = CALL_STATUS_TO_ERROR.get(call_status, "Unknown error.")
         raise RuntimeError(error)

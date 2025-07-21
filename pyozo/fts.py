@@ -1,3 +1,9 @@
+"""
+
+File trsnsfer service (FTS) module.
+
+"""
+
 from typing import List
 from dataclasses import dataclass
 import os
@@ -48,6 +54,8 @@ logger = logging.getLogger("pyozo.fts")
 
 @dataclass
 class DirEntry:
+    """File-system directory entry."""
+
     name: str
     is_dir: bool
     size: int
@@ -56,18 +64,27 @@ class DirEntry:
 
 @dataclass
 class VolumeSize:
+    """File-system volume sizes."""
+
     size: int
     free: int
 
 
 class FileTransferService:
+    """File Transfer Service (FTS)."""
+
     BLOCK_SIZE = 500
+    """Block size in bytes."""
     BLOCK_TRANSFER_TIMEOUT = 5.0
+    """Block transfet timeout in seconds."""
 
     def __init__(self, client: FileTransferServiceClient) -> None:
+        """Constructor."""
         self.client = client
+        """File transfer service client instance."""
 
     async def volume_size(self, volume: Volume) -> VolumeSize:
+        """Get volume size request."""
         request = PacketRequest_VolumeSize(volume=volume)
         response = await self.client.request(request)
         if not isinstance(response, PacketResponse_VolumeSize):
@@ -76,6 +93,7 @@ class FileTransferService:
         return VolumeSize(response.volume_size, response.free_size)
 
     async def listdir(self, path: str, provide_crc: bool = False, list_all: bool = False) -> List[DirEntry]:
+        """List directory request."""
         flags = 0
         if provide_crc:
             flags |= 0x01
@@ -102,6 +120,7 @@ class FileTransferService:
         return res
 
     async def download_file(self, path: str) -> bytes:
+        """Download file request."""
         data = b""
 
         # Start file download.
@@ -172,6 +191,7 @@ class FileTransferService:
         return data
 
     async def upload_file(self, path: str, data: bytes) -> None:
+        """Upload file request."""
         file_size = len(data)
         file_crc = zlib.crc32(data)
 
@@ -228,6 +248,7 @@ class FileTransferService:
         raise_for_response_code(upload_end_response.response_code)
 
     async def rm(self, path: str) -> None:
+        """Remove file-system object request."""
         request = PacketRequest_DeleteFilePath(path=path)
         response = await self.client.request(request)
         if not isinstance(response, PacketResponse_DeleteFile):
@@ -235,6 +256,7 @@ class FileTransferService:
         raise_for_response_code(response.response_code)
 
     async def mkdir(self, path: str) -> None:
+        """Make directory request."""
         request = PacketRequest_MakeDirectory(path=path)
         response = await self.client.request(request)
         if not isinstance(response, PacketResponse_MakeDirectory):
@@ -242,6 +264,7 @@ class FileTransferService:
         raise_for_response_code(response.response_code)
 
     async def stat(self, path: str) -> DirEntry:
+        """File-system object status request."""
         request = PacketRequest_FileInfoPath(path=path)
         response = await self.client.request(request)
         if not isinstance(response, PacketResponse_FileInfoPath):

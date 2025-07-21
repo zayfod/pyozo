@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+
+Get basic information about a robot.
+
+"""
 
 import asyncio
 

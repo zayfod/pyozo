@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+
+Change front LED colors based on the value, read from the color sensor.
+
+"""
 
 import asyncio
 

@@ -1,3 +1,11 @@
+"""
+
+Protocol and data structure serialization and deserialization utilities.
+
+Inspired by Pydantic (https://pydantic.dev/).
+
+"""
+
 from typing import Any, List, Dict, Tuple, ClassVar, Union
 from enum import Enum
 
@@ -19,6 +27,7 @@ class BinaryReader:
     """Used to read in a stream of binary data, keeping track of the current position."""
 
     def __init__(self, buffer: Union[bytes, bytearray], offset: int = 0):
+        """Constructor."""
         self._buffer = buffer
         self._index = offset
 
@@ -60,6 +69,7 @@ class BinaryWriter:
     """Used to write out a stream of binary data."""
 
     def __init__(self) -> None:
+        """Constructor."""
         self._buffer: List[bytes] = []
 
     def __len__(self) -> int:
@@ -82,31 +92,51 @@ class BinaryWriter:
 
 
 class FieldType(Enum):
+    """Field types used in the protocol packet and datastructure definitions."""
+
     UINT8 = 1
+    """8-bit unsigned integer."""
     UINT16 = 2
+    """16-bit unsigned integer."""
     UINT32 = 3
+    """32-bit unsigned integer."""
     INT8 = 4
+    """8-bit signed integer."""
     INT16 = 5
+    """16-bit signed integer."""
     INT32 = 6
-    FLOAT = 7  # 24-bit single-precision float.
-    BYTES = 8  # Raw bytes. Only works as the last field.
-    STRZ = 9  # NUL-terminated string. Only works as the last field.
-    STR = 10  # String (used with file transfer service). Only works as the last field.
+    """32-bit signed integer."""
+    FLOAT = 7
+    """24-bit single-precision floating point number."""
+    BYTES = 8
+    """Raw bytes. Only works as the last field."""
+    STRZ = 9
+    """NUL-terminated string. Only works as the last field."""
+    STR = 10
+    """String (used with file transfer service). Only works as the last field."""
 
 
 class FieldInfo:
-    def __init__(self, field_type: FieldType, default: Any = ..., description: str = "") -> None:
-        self.type: Any = None  # Actual type of the model member variable.
-        self.field_type = field_type  # Encoding type.
-        self.default = default  # Default value.
-        self.description = description  # Field description.
+    """Protocol packet and datastructure definition field information."""
+
+    def __init__(self, field_type: FieldType, default: Any = ...) -> None:
+        """Constructor."""
+        self.type: Any = None
+        """Actual type of the model member variable."""
+        self.field_type = field_type
+        """Encoding type."""
+        self.default = default
+        """Default value."""
 
 
-def Field(field_type: FieldType, default: Any = ..., description: str = "") -> Any:
-    return FieldInfo(field_type=field_type, default=default, description=description)
+def Field(field_type: FieldType, default: Any = ...) -> Any:
+    """Factory function to create a field definition."""
+    return FieldInfo(field_type=field_type, default=default)
 
 
 class BaseModelMeta(type):
+    """Metaclass for BaseModel that processes field definitions."""
+
     def __new__(mcs, name: str, bases: Tuple[type, ...], namespace: Dict[str, Any]) -> type:
         annotations = namespace.get("__annotations__", {})
         fields: Dict[str, FieldInfo] = {}
@@ -125,6 +155,7 @@ class BaseModelMeta(type):
 
 
 def float_to_s24(f: float) -> int:
+    """Conversion to Ozobot-specific 24-bit single-precision floating point number format."""
     res = round(f * 16777216)
     if res < (-2 * 1073741824) or res >= (2 * 1073741824):
         raise ValueError(f"Cannot convert {f} to S24. Value out of range.")
@@ -132,13 +163,16 @@ def float_to_s24(f: float) -> int:
 
 
 def s24_to_float(i: int) -> float:
+    """Conversion from Ozobot-specific 24-bit single-precision floating point number format."""
     return float(i) / 16777216
 
 
 class BaseModel(metaclass=BaseModelMeta):
     _fields: ClassVar[Dict[str, FieldInfo]] = {}
+    """Field definition dictionary."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """Constructor."""
         for field_name, field_info in self._fields.items():
             if field_name in kwargs:
                 value = kwargs[field_name]
@@ -184,16 +218,19 @@ class BaseModel(metaclass=BaseModelMeta):
         return self.get_size()
 
     def __repr__(self) -> str:
+        """String representation."""
         fields = [f"{field}={getattr(self, field)}" for field in self._fields.keys()]
         res = f"{type(self).__name__}({', '.join(fields)})"
         return res
 
     def to_bytes(self) -> bytes:
+        """Serializes the model to bytes."""
         writer = BinaryWriter()
         self.to_writer(writer)
         return writer.dumps()
 
     def to_writer(self, writer: BinaryWriter) -> None:
+        """Serializes the model to a BinaryWriter."""
         for field, field_info in self._fields.items():
             value = getattr(self, field, field_info.default)
             if isinstance(value, Enum):
@@ -224,12 +261,14 @@ class BaseModel(metaclass=BaseModelMeta):
 
     @classmethod
     def from_bytes(cls, buffer: Union[bytes, bytearray]) -> "BaseModel":
+        """Deserializes the model from bytes."""
         reader = BinaryReader(buffer)
         obj = cls.from_reader(reader)
         return obj
 
     @classmethod
     def from_reader(cls, reader: BinaryReader) -> "BaseModel":
+        """Deserializes the model from a BinaryReader."""
         kwargs = {}
         for field_name, field_info in cls._fields.items():
             if field_info.field_type == FieldType.UINT8:
