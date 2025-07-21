@@ -20,7 +20,6 @@ TURN_DURATION = 200
 async def main() -> None:
     async with pyozo.get_robot() as robot:
         while True:
-
             proximity = await robot.get_ir_proximity()
 
             if proximity.left_front > PROXIMITY_THRESHOLD and proximity.right_front <= PROXIMITY_THRESHOLD:
