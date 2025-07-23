@@ -389,8 +389,8 @@ class PacketRequest_WatcherSetup(BaseModel):
     message_id: int = Field(FieldType.UINT16, default=122)
     watcher_id: int = Field(FieldType.UINT8, default=0)
     flags: WatcherFlags = Field(FieldType.UINT8, default=WatcherFlags(0))
-    notification_period_min: int = Field(FieldType.UINT16, default=0)
-    notification_period_max: int = Field(FieldType.UINT16, default=0)
+    notification_period_min_ms: int = Field(FieldType.UINT16, default=0)
+    notification_period_max_ms: int = Field(FieldType.UINT16, default=0)
 
 
 class PacketResponse_WatcherSetup(BaseModel):
@@ -468,7 +468,7 @@ class PacketEvent_LineNavigationExecutionUpdate(BaseModel):
     message_id: int = Field(FieldType.UINT16, default=257)
     request_id: int = Field(FieldType.UINT32, default=0)
     execution_state: ExecutionState = Field(FieldType.UINT8, default=ExecutionState.RUNNING)
-    intersection: IntersectionDirection = Field(FieldType.INT8, default=IntersectionDirection(0))
+    intersection_direction: IntersectionDirection = Field(FieldType.INT8, default=IntersectionDirection(0))
 
 
 class PacketEvent_Shutdown(BaseModel):
