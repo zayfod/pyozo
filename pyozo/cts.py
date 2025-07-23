@@ -106,7 +106,7 @@ class ControlService:
         raise_for_request_id(response.request_id, request.request_id)
         return response.request_id
 
-    async def live_navigation(self, direction: IntersectionDirection, action: LineNavigationAction) -> int:
+    async def line_navigation(self, direction: IntersectionDirection, action: LineNavigationAction) -> int:
         request = PacketRequest_LineNavigation(
             direction=direction, action=action, request_id=self._get_next_request_id()
         )
@@ -171,13 +171,13 @@ class ControlService:
         raise_for_request_id(response.request_id, request.request_id)
 
     async def watcher_setup(
-        self, watcher_id: int, flags: WatcherFlags, notification_period_min: int, notification_period_max: int
+        self, watcher_id: int, flags: WatcherFlags, notification_period_min_ms: int, notification_period_max_ms: int
     ) -> None:
         request = PacketRequest_WatcherSetup(
             watcher_id=int(watcher_id),
             flags=flags,
-            notification_period_min=int(notification_period_min),
-            notification_period_max=int(notification_period_max),
+            notification_period_min_ms=int(notification_period_min_ms),
+            notification_period_max_ms=int(notification_period_max_ms),
         )
         response = await self.client.request(request)
         if not isinstance(response, PacketResponse_WatcherSetup):
@@ -185,7 +185,12 @@ class ControlService:
         raise_for_call_status(response.call_status)
 
     async def watcher_region_setup(
-        self, watcher_id: int, region_id: int, address: int, size: int, flags: WatcherRegionFlags
+        self,
+        watcher_id: int,
+        region_id: int,
+        address: int,
+        size: int,
+        flags: WatcherRegionFlags = WatcherRegionFlags(0),
     ) -> None:
         request = PacketRequest_WatcherRegionSetup(
             watcher_id=int(watcher_id), region_id=int(region_id), address=int(address), size=int(size), flags=flags

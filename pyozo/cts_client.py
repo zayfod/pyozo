@@ -4,7 +4,7 @@ Control service client module.
 
 """
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Callable, Awaitable, TypeAlias
 import asyncio
 import logging
 import zlib
@@ -34,6 +34,7 @@ from .virtual_memory import (
 
 
 __all__ = [
+    "EventHandler",
     "ControlServiceClient",
 ]
 
@@ -44,6 +45,9 @@ MAX_REQUEST_BLOCK_SIZE = MAX_PACKET_SIZE - 8
 # Note: 5 is MemRead response header size.
 MAX_RESPONSE_BLOCK_SIZE = MAX_PACKET_SIZE - 5
 """Maximum response block size in bytes."""
+
+
+EventHandler: TypeAlias = Callable[[BaseModel], Awaitable[None]]
 
 
 logger = logging.getLogger("pyozo.client")
@@ -58,16 +62,13 @@ class ControlServiceClient:
         """Bleak client instance."""
         self.response: Optional[BaseModel] = None
         self.response_event = asyncio.Event()
+        self.event_handler: Optional[EventHandler] = None
 
     async def response_handler(self, packet: BaseModel) -> None:
         """Response handler method."""
         logger.debug(f"Got {packet}")
         self.response = packet
         self.response_event.set()
-
-    async def event_handler(self, packet: BaseModel) -> None:
-        """Event handler method."""
-        logger.info(f"Got event {packet}")
 
     async def notification_handler(self, _: BleakGATTCharacteristic, data: bytearray) -> None:
         """Bluetooth characteristic notification handler method."""
@@ -76,7 +77,9 @@ class ControlServiceClient:
             if packet.message_id < 256:
                 await self.response_handler(packet)
             else:
-                await self.event_handler(packet)
+                logger.debug(f"Got event {packet}")
+                if self.event_handler is not None:
+                    await self.event_handler(packet)
 
     async def connect(self) -> None:
         """Connect to the control Bluetooth service."""

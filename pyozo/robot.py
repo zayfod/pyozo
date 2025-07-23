@@ -5,17 +5,21 @@ Robot representation module.
 """
 
 from types import TracebackType
-from typing import Optional, Self, cast
+from typing import Optional, Callable, Awaitable, Self, cast, TypeAlias
 from dataclasses import dataclass
 import math
 from uuid import UUID
+import struct
+import logging
 
 from bleak import BleakClient
 
 from .cts_client import ControlServiceClient
 from .cts import ControlService
+from .cts_encoder import ExecutionState, IntersectionDirection, PacketEvent_LineNavigationExecutionUpdate
 from .fts_client import FileTransferServiceClient
 from .fts import FileTransferService
+from .protocol_utils import BaseModel, s24_to_float, float_to_s24
 from .virtual_memory import (
     PROCESSED_COLOR_ADDRESS,
     PROCESSED_COLOR_SIZE,
@@ -28,6 +32,8 @@ from .virtual_memory import (
     RelativePosition,
     DEVICE_NAME_ADDRESS,
     DEVICE_NAME_SIZE,
+    LINE_NAVIGATION_SPEED_ADDRESS,
+    LINE_NAVIGATION_SPEED_SIZE,
     FW_VERSION_ADDRESS,
     FW_VERSION_SIZE,
     Version,
@@ -37,11 +43,23 @@ from .virtual_memory import (
     BLUETOOTH_VERSION_SIZE,
     BLUETOOTH_ADDRESS_ADDRESS,
     BLUETOOTH_ADDRESS_SIZE,
+    WATCHERS_INFO_ADDRESS,
+    WATCHERS_INFO_SIZE,
+    WatchersInfo,
 )
 
 __all__ = [
+    "LineNavigationUpdateHandler",
     "RobotGeometry",
     "Robot",
+]
+
+
+logger = logging.getLogger("pyozo.robot")
+
+
+LineNavigationUpdateHandler: TypeAlias = Callable[
+    ["Robot", int, ExecutionState, IntersectionDirection], Awaitable[None]
 ]
 
 
@@ -86,9 +104,11 @@ class Robot:
             max_speed_limit=0.3,
         )
         """Robot geometry constants."""
+        self.line_navigation_update_handler: Optional[LineNavigationUpdateHandler] = None
 
     async def connect(self) -> None:
         """Connect to the robot."""
+        self.cts_client.event_handler = self._event_handler
         await self.cts_client.connect()
         await self.fts_client.connect()
 
@@ -110,6 +130,14 @@ class Robot:
     ) -> None:
         """Disconnect from the robot as part of leaving a context."""
         await self.disconnect()
+
+    async def _event_handler(self, packet: BaseModel) -> None:
+        """Handle events from the control service."""
+        if isinstance(packet, PacketEvent_LineNavigationExecutionUpdate):
+            if self.line_navigation_update_handler is not None:
+                await self.line_navigation_update_handler(
+                    self, packet.request_id, packet.execution_state, packet.intersection_direction
+                )
 
     async def get_processed_color(self) -> ProcessedColor:
         """Get processed color sensor readings."""
@@ -141,6 +169,18 @@ class Robot:
         value = cast(Version, Version.from_bytes(data))
         return value
 
+    async def get_line_navigation_speed(self) -> float:
+        """Get line navigation speed in meters per second."""
+        data = await self.cts.mem_read(LINE_NAVIGATION_SPEED_ADDRESS, LINE_NAVIGATION_SPEED_SIZE)
+        speed_mps = s24_to_float(struct.unpack("<l", data)[0])
+        return speed_mps
+
+    async def set_line_navigation_speed(self, speed_mps: float) -> None:
+        """Set line navigation speed in meters per second."""
+        s24 = float_to_s24(float(speed_mps))
+        data = struct.pack("<l", s24)
+        await self.cts.mem_write(LINE_NAVIGATION_SPEED_ADDRESS, data)
+
     async def get_serial_number(self) -> UUID:
         """Get serial number from VM."""
         data = await self.cts.mem_read(SERIAL_NUMBER_ADDRESS, SERIAL_NUMBER_SIZE)
@@ -157,6 +197,12 @@ class Robot:
         """Get Bluetooth address from VM."""
         data = await self.cts.mem_read(BLUETOOTH_ADDRESS_ADDRESS, BLUETOOTH_ADDRESS_SIZE)
         return data.hex()
+
+    async def get_watchers_info(self) -> WatchersInfo:
+        """Get watcher information from VM."""
+        data = await self.cts.mem_read(WATCHERS_INFO_ADDRESS, WATCHERS_INFO_SIZE)
+        info = cast(WatchersInfo, WatchersInfo.from_bytes(data))
+        return info
 
     async def get_assets_hash(self) -> str:
         """Get assets SHA256 checksum from file-system."""
@@ -175,3 +221,7 @@ class Robot:
     async def rotate_deg(self, angle_deg: float, speed_degps: float) -> int:
         """Rotate the robot by specifying angle in degrees and angular speed in degrees per second."""
         return await self.cts.rotate(math.radians(angle_deg), speed_radps=math.radians(speed_degps))
+
+    async def set_line_navigation_update_handler(self, handler: Optional[LineNavigationUpdateHandler]) -> None:
+        """Set a handler for line navigation updates."""
+        self.line_navigation_update_handler = handler
