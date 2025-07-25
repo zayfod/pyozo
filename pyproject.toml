@@ -4,7 +4,7 @@ authors = [{ name = "Kaloyan Tenchov" }]
 description = "Pure-Python Ozobot communication library."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["bleak"]
+dependencies = ["bleak", "packaging"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python",

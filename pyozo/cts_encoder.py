@@ -4,7 +4,6 @@ Control service protocol encoder module.
 
 """
 
-from typing import Union
 from enum import Enum, Flag
 import struct
 
@@ -83,6 +82,7 @@ __all__ = [
     "packet_from_bytes",
     "raise_for_ioresult",
     "raise_for_call_status",
+    "message_id",
 ]
 
 
@@ -515,6 +515,8 @@ class PacketEvent_VirtualMachineExecutionState(BaseModel):
 
 
 class PacketEvent_VelocityExecutionState(BaseModel):
+    """Requires firmware 3.7.4."""
+
     message_id: int = Field(FieldType.UINT16, default=266)
     request_id: int = Field(FieldType.UINT32, default=0)
     execution_state: ExecutionState = Field(FieldType.UINT8, default=ExecutionState.RUNNING)
@@ -593,7 +595,7 @@ CALL_STATUS_TO_ERROR = {
 }
 
 
-def packet_from_bytes(data: Union[bytes, bytearray]) -> BaseModel:
+def packet_from_bytes(data: bytes | bytearray) -> BaseModel:
     """Creates a packet object from the given byte data."""
     if len(data) < 2:
         raise ValueError("Data too short to contain a valid packet.")
@@ -617,3 +619,8 @@ def raise_for_call_status(call_status: CallStatus) -> None:
     if call_status != CallStatus.SUCCESS:
         error = CALL_STATUS_TO_ERROR.get(call_status, "Unknown error.")
         raise RuntimeError(error)
+
+
+def message_id(packet: type[BaseModel]) -> int:
+    """Returns the message ID of the given packet."""
+    return packet.message_id.default if hasattr(packet, "message_id") else -1
