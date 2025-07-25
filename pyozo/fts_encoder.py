@@ -4,7 +4,6 @@ File transfer service protocol encoder module.
 
 """
 
-from typing import Union
 from enum import Enum
 import struct
 
@@ -379,7 +378,7 @@ RESPONSE_CODE_TO_ERROR = {
 }
 
 
-def packet_from_bytes(data: Union[bytes, bytearray]) -> BaseModel:
+def packet_from_bytes(data: bytes | bytearray) -> BaseModel:
     """Creates a packet object from the given byte data."""
     if len(data) < 1:
         raise ValueError("Data too short to contain a valid packet.")

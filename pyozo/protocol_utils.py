@@ -6,7 +6,7 @@ Inspired by Pydantic (https://pydantic.dev/).
 
 """
 
-from typing import Any, List, Dict, Tuple, ClassVar, Union
+from typing import Any, List, Dict, Tuple, ClassVar
 from enum import Enum
 
 import struct
@@ -26,7 +26,7 @@ __all__ = [
 class BinaryReader:
     """Used to read in a stream of binary data, keeping track of the current position."""
 
-    def __init__(self, buffer: Union[bytes, bytearray], offset: int = 0):
+    def __init__(self, buffer: bytes | bytearray, offset: int = 0):
         """Constructor."""
         self._buffer = buffer
         self._index = offset
@@ -260,7 +260,7 @@ class BaseModel(metaclass=BaseModelMeta):
                 raise ValueError(f"Unsupported field type '{field_info.field_type}'.")
 
     @classmethod
-    def from_bytes(cls, buffer: Union[bytes, bytearray]) -> "BaseModel":
+    def from_bytes(cls, buffer: bytes | bytearray) -> "BaseModel":
         """Deserializes the model from bytes."""
         reader = BinaryReader(buffer)
         obj = cls.from_reader(reader)

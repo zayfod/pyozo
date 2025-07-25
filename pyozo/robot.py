@@ -13,10 +13,16 @@ import struct
 import logging
 
 from bleak import BleakClient
+import packaging.version
 
 from .cts_client import ControlServiceClient
 from .cts import ControlService
-from .cts_encoder import ExecutionState, IntersectionDirection, PacketEvent_LineNavigationExecutionUpdate
+from .cts_encoder import (
+    ExecutionState,
+    IntersectionDirection,
+    PacketEvent_LineNavigationExecutionUpdate,
+    PacketEvent_PreciseMovementExecutionUpdate,
+)
 from .fts_client import FileTransferServiceClient
 from .fts import FileTransferService
 from .protocol_utils import BaseModel, s24_to_float, float_to_s24
@@ -163,11 +169,12 @@ class Robot:
         name = data.decode("utf-8").rstrip("\0")
         return name
 
-    async def get_fw_version(self) -> Version:
+    async def get_fw_version(self) -> packaging.version.Version:
         """Get firmware version from VM."""
         data = await self.cts.mem_read(FW_VERSION_ADDRESS, FW_VERSION_SIZE)
         value = cast(Version, Version.from_bytes(data))
-        return value
+        version = packaging.version.Version(f"{value.major}.{value.minor}.{value.patch}")
+        return version
 
     async def get_line_navigation_speed(self) -> float:
         """Get line navigation speed in meters per second."""
@@ -187,11 +194,12 @@ class Robot:
         serial = UUID(bytes=data)
         return serial
 
-    async def get_bluetooth_version(self) -> Version:
+    async def get_bluetooth_version(self) -> packaging.version.Version:
         """Get Bluetooth module firmware version from VM."""
         data = await self.cts.mem_read(BLUETOOTH_VERSION_ADDRESS, BLUETOOTH_VERSION_SIZE)
         value = cast(Version, Version.from_bytes(data))
-        return value
+        version = packaging.version.Version(f"{value.major}.{value.minor}.{value.patch}")
+        return version
 
     async def get_bluetooth_address(self) -> str:
         """Get Bluetooth address from VM."""
@@ -209,16 +217,15 @@ class Robot:
         data = await self.fts.download_file("/system/config/assets.cnf")
         return data.decode("utf-8")
 
-    async def move_wheels(self, left_mps: float, right_mps: float, duration_ms: int = -1) -> int:
+    async def move_wheels(self, left_mps: float, right_mps: float, duration_ms: int = -1) -> None:
         """Set the speed of the left and right wheels in meters per second."""
         linear_speed_mps = (right_mps + left_mps) / 2.0
         angular_speed_radps = (right_mps - left_mps) / self.geometry.wheel_track
-        request_id = await self.cts.velocity(
+        await self.cts.velocity(
             linear_speed_mps=linear_speed_mps, angular_speed_radps=angular_speed_radps, duration_ms=int(duration_ms)
         )
-        return request_id
 
-    async def rotate_deg(self, angle_deg: float, speed_degps: float) -> int:
+    async def rotate_deg(self, angle_deg: float, speed_degps: float) -> PacketEvent_PreciseMovementExecutionUpdate:
         """Rotate the robot by specifying angle in degrees and angular speed in degrees per second."""
         return await self.cts.rotate(math.radians(angle_deg), speed_radps=math.radians(speed_degps))
 

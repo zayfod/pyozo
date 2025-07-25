@@ -15,7 +15,6 @@ async def main() -> None:
         # TODO: Detect disabled speaker when charging.
 
         await robot.cts.execute_file("/system/audio/01010100.wav")
-        await asyncio.sleep(1.0)  # TODO: Wait for event instead.
 
 
 asyncio.run(main())
