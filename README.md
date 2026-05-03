@@ -41,6 +41,12 @@ Using pip:
 pip install pyozo
 ```
 
+Using [uv](https://docs.astral.sh/uv/):
+
+```
+uv pip install pyozo
+```
+
 From source:
 
 ```
@@ -56,6 +62,15 @@ git clone https://github.com/zayfod/pyozo.git
 cd pyozo
 pip install -r requirements.txt
 pip install -e .
+```
+
+Or with uv:
+
+```
+git clone https://github.com/zayfod/pyozo.git
+cd pyozo
+uv pip install -r requirements.txt
+uv pip install -e .
 ```
 
 
