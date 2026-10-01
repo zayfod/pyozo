@@ -287,7 +287,7 @@ class PacketRequest_Velocity(BaseModel):
     request_id: int = Field(FieldType.UINT32, default=0)
     linear_speed_mps: float = Field(FieldType.FLOAT, default=0.0)
     angular_speed_radps: float = Field(FieldType.FLOAT, default=0.0)
-    duration_ms: int = Field(FieldType.INT32, default=0)
+    duration_ms: int = Field(FieldType.INT32, default=0)  # FIXME: expiration?
 
 
 class PacketResponse_Velocity(BaseModel):

@@ -17,6 +17,9 @@ license = "MIT"
 license-files = ["LICENSE"]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+examples = ["pygame"]
+
 [project.urls]
 Homepage = "https://github.com/zayfod/pyozo"
 Issues = "https://github.com/zayfod/pyozo/issues"
@@ -33,6 +36,20 @@ version_file = "pyozo/version.py"
 
 [tool.ruff]
 line-length = 120
+
+
+[tool.ruff.lint]
+# select = [
+#     "D",
+# ]
+ignore = [
+    "D200", # "One-line docstring should fit on one line"
+    "D212", # "Multi-line docstring summary should start at the first line"
+    "D401", # "First line of docstring should be in imperative mood"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = ["D"]
 
 [tool.mypy]
 install_types = true

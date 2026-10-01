@@ -122,7 +122,7 @@ class ControlService:
         response = await self.client.request(request, message_id(PacketResponse_Velocity), request.request_id)
         response = cast(PacketResponse_Velocity, response)
         raise_for_request_id(response.request_id, request.request_id)
-        if duration_ms:
+        if duration_ms >= 0:
             event = await self._wait_execution(message_id(PacketEvent_VelocityExecutionState), request.request_id)
             event = cast(PacketEvent_VelocityExecutionState, event)
             return event
